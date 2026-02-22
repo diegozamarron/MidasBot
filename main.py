@@ -44,62 +44,113 @@ def normalize_post(text: str) -> str:
 
 
 # ----------------------------
-# VADER sentiment + topic→company mapping
+# VADER sentiment + topic→ticker mapping
 # ----------------------------
 analyzer = SentimentIntensityAnalyzer()
 
-TOPIC_COMPANY = {
-    "oil": "Chevron",
-    "energy": "Exxon Mobil",
-    "gas": "Exxon Mobil",
-    "military": "Lockheed Martin",
-    "defense": "Lockheed Martin",
-    "aircraft": "Boeing",
-    "jet": "Lockheed Martin",
-    "media": "Fox Corporation",
-    "news": "Fox Corporation",
-    "youtube": "Alphabet",
-    "google": "Alphabet",
-    "water": "Xylem",
-    "sewage": "Xylem",
-    "infrastructure": "AECOM",
-    "construction": "Caterpillar",
-    "border": "Palantir",
-    "crime": "Axon",
-    "police": "Axon",
-    "tech": "Apple",
+TOPIC_TICKER = {
+    # Energy
+    "oil": "CVX",
+    "energy": "XOM",
+    "gas": "XOM",
+    "crude": "XOM",
+    "pipeline": "XOM",
+    "drilling": "XOM",
+    "refinery": "CVX",
+    "lng": "XOM",
+    # Defense / aerospace
+    "military": "LMT",
+    "defense": "LMT",
+    "aircraft": "BA",
+    "jet": "LMT",
+    "fighter": "LMT",
+    "missile": "LMT",
+    "navy": "LMT",
+    "army": "LMT",
+    "war": "LMT",
+    "pentagon": "LMT",
+    "drone": "BA",
+    "space": "BA",
+    # Media / internet platforms
+    "media": "FOX",
+    "news": "FOX",
+    "press": "FOX",
+    "broadcast": "FOX",
+    "journalist": "FOX",
+    "tv": "FOX",
+    "youtube": "GOOGL",
+    "google": "GOOGL",
+    "search": "GOOGL",
+    "ads": "GOOGL",
+    "advertising": "GOOGL",
+    "cloud": "GOOGL",
+    "android": "GOOGL",
+    # Utilities / infrastructure / industrial
+    "water": "XYL",
+    "sewage": "XYL",
+    "wastewater": "XYL",
+    "flood": "XYL",
+    "utility": "XYL",
+    "infrastructure": "ACM",
+    "construction": "CAT",
+    "highway": "CAT",
+    "bridge": "CAT",
+    "rail": "CAT",
+    "factory": "CAT",
+    "manufacturing": "CAT",
+    "machinery": "CAT",
+    # Security / surveillance
+    "border": "PLTR",
+    "immigration": "PLTR",
+    "migrant": "PLTR",
+    "surveillance": "PLTR",
+    "intelligence": "PLTR",
+    "analytics": "PLTR",
+    "software": "PLTR",
+    "crime": "AXON",
+    "police": "AXON",
+    "law enforcement": "AXON",
+    "taser": "AXON",
+    "bodycam": "AXON",
+    "body camera": "AXON",
+    "sheriff": "AXON",
+    "public safety": "AXON",
+    # Tech consumer / devices
+    "tech": "AAPL",
+    "iphone": "AAPL",
+    "apple": "AAPL",
+    "smartphone": "AAPL",
+    "app store": "AAPL",
+    "consumer tech": "AAPL",
+    # Macro market terms
+    "dow": "SPY",
+    "s&p": "SPY",
+    "nasdaq": "QQQ",
+    "stock market": "SPY",
+    "market": "SPY",
+    "inflation": "XOM",
+    "interest rates": "SPY",
+    "jobs": "SPY",
+    "manufacturing jobs": "CAT",
 }
 
-# Representative company -> ticker (Alpaca-compatible)
-COMPANY_TICKER = {
-    "Chevron": "CVX",
-    "Exxon Mobil": "XOM",
-    "Lockheed Martin": "LMT",
-    "Boeing": "BA",
-    "Fox Corporation": "FOX",
-    "Alphabet": "GOOGL",
-    "Xylem": "XYL",
-    "AECOM": "ACM",
-    "Caterpillar": "CAT",
-    "Palantir": "PLTR",
-    "Axon": "AXON",
-    "Apple": "AAPL",
-}
+# Keep first-match precedence and avoid recompiling regex on every post.
+TOPIC_PATTERNS = [
+    (re.compile(rf"\b{re.escape(keyword)}\b"), ticker)
+    for keyword, ticker in TOPIC_TICKER.items()
+]
+
 
 def extract_company_and_sentiment(text: str) -> dict:
     t = text.lower()
-    company = None
-    for keyword, comp in TOPIC_COMPANY.items():
-        if re.search(rf"\b{re.escape(keyword)}\b", t):
-            company = comp
+    ticker = None
+    for pattern, mapped_ticker in TOPIC_PATTERNS:
+        if pattern.search(t):
+            ticker = mapped_ticker
             break
 
     score = float(analyzer.polarity_scores(text)["compound"])
 
-    if company is None:
-        return {"ticker": None, "score": 0.0}
-
-    ticker = COMPANY_TICKER.get(company)
     if not ticker:
         return {"ticker": None, "score": 0.0}
 
@@ -264,12 +315,14 @@ base_url = (
 )
 
 # ----------------------------
-# Fetch posts with pagination (max_id)
+# Fetch/process posts with pagination (max_id)
 # ----------------------------
+processed = 0
+trade_rows = []  # list of (ticker, score)
 max_id = None
-all_posts = []
+fetched_posts = 0
 
-while len(all_posts) < LIMIT:
+while fetched_posts < LIMIT and processed < TARGET_USABLE_POSTS:
     paged_url = base_url
     if max_id:
         paged_url += f"&max_id={max_id}"
@@ -333,44 +386,33 @@ while len(all_posts) < LIMIT:
     if not batch:
         break
 
-    all_posts.extend(batch)
+    fetched_posts += len(batch)
+
+    for post in batch:
+        content_html = post.get("content", "")
+        content_text = BeautifulSoup(content_html, "html.parser").get_text(strip=True)
+
+        if not content_text or len(content_text) <= 3:
+            continue
+
+        text_for_model = normalize_post(content_text)
+        if text_for_model is None:
+            continue
+
+        result = extract_company_and_sentiment(text_for_model)
+
+        # Skip rows with no ticker (non-tradable / non-data)
+        if result["ticker"] is None:
+            continue
+
+        trade_rows.append((result["ticker"], result["score"]))
+        processed += 1
+        if processed >= TARGET_USABLE_POSTS:
+            break
 
     # prepare next page
     max_id = batch[-1].get("id")
     if not max_id:
-        break
-
-# all_posts now contains paginated results
-
-
-# ----------------------------
-# Extract text + run company/sentiment
-# ----------------------------
-
-processed = 0
-trade_rows = []  # list of (ticker, score)
-
-for post in all_posts:
-    content_html = post.get("content", "")
-    content_text = BeautifulSoup(content_html, "html.parser").get_text(strip=True)
-
-    if not content_text or len(content_text) <= 3:
-        continue
-
-    text_for_model = normalize_post(content_text)
-    if text_for_model is None:
-        continue
-
-    result = extract_company_and_sentiment(text_for_model)
-
-    # Skip rows with no ticker (non-tradable / non-data)
-    if result["ticker"] is None:
-        continue
-
-    trade_rows.append((result["ticker"], result["score"]))
-    processed += 1
-
-    if processed >= TARGET_USABLE_POSTS:
         break
 
 print(f"Collected {processed} tradable signals for today.")
@@ -378,16 +420,17 @@ print(f"Collected {processed} tradable signals for today.")
 # ----------------------------
 # Aggregate per ticker (mean sentiment)
 # ----------------------------
-agg_sum = defaultdict(float)
-agg_count = defaultdict(int)
+agg = defaultdict(lambda: [0.0, 0])  # ticker -> [sum_score, count]
 for tkr, sc in trade_rows:
-    agg_sum[tkr] += float(sc)
-    agg_count[tkr] += 1
+    agg[tkr][0] += float(sc)
+    agg[tkr][1] += 1
 
 aggregated = []  # list of (ticker, mean_score, count)
-for tkr in agg_sum:
-    mean_score = agg_sum[tkr] / max(1, agg_count[tkr])
-    aggregated.append((tkr, mean_score, agg_count[tkr]))
+for tkr, (sum_score, cnt) in agg.items():
+    if cnt <= 0:
+        continue
+    mean_score = sum_score / cnt
+    aggregated.append((tkr, mean_score, cnt))
 
 # Build TODAY'S BST for today's picks
 root_today = None
