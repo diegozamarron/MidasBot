@@ -1,13 +1,14 @@
 import os
 import re
-import json
 import time
-import csv
 from collections import defaultdict
 
 import cloudscraper
 from bs4 import BeautifulSoup
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from alpaca.trading.client import TradingClient
+from alpaca.trading.enums import OrderSide, TimeInForce
+from alpaca.trading.requests import MarketOrderRequest
 import pickle
 from datetime import date
 
@@ -22,6 +23,15 @@ EXCLUDE_REPLIES = "false"
 # Pacing to reduce Truth Social rate limiting (HTTP 429)
 PAGE_DELAY_SECONDS = float(os.getenv("TS_PAGE_DELAY_SECONDS", "1.0"))
 RATE_LIMIT_FLOOR_SECONDS = float(os.getenv("TS_RATE_LIMIT_FLOOR_SECONDS", "15"))
+
+# Alpaca execution config
+ALPACA_KEY_ID = os.getenv("APCA_API_KEY_ID", "").strip()
+ALPACA_SECRET_KEY = os.getenv("APCA_API_SECRET_KEY", "").strip()
+ALPACA_BASE_URL = os.getenv("APCA_API_BASE_URL", "").strip().rstrip("/")
+if ALPACA_BASE_URL.endswith("/v2"):
+    ALPACA_BASE_URL = ALPACA_BASE_URL[:-3]
+ALPACA_PAPER = os.getenv("APCA_PAPER", "true").strip().lower() == "true"
+ORDER_QTY_SHARES = int(os.getenv("ORDER_QTY_SHARES", "10"))
 
 
 URL_RE = re.compile(r"https?://\S+")
@@ -160,6 +170,86 @@ def save_tree(path: str, root: Node | None) -> None:
             pickle.dump(root, f)
     except Exception as e:
         print(f"Warning: could not save tree to {path}: {e}")
+
+
+def submit_alpaca_signal_orders(best: Node | None, worst: Node | None, trade_day: str) -> None:
+    if not ALPACA_KEY_ID or not ALPACA_SECRET_KEY:
+        print("Alpaca: credentials not set. Skipping order execution.")
+        return
+
+    if ORDER_QTY_SHARES <= 0:
+        print(f"Alpaca: ORDER_QTY_SHARES must be > 0 (got {ORDER_QTY_SHARES}). Skipping.")
+        return
+
+    try:
+        if ALPACA_BASE_URL:
+            client = TradingClient(
+                api_key=ALPACA_KEY_ID,
+                secret_key=ALPACA_SECRET_KEY,
+                paper=ALPACA_PAPER,
+                url_override=ALPACA_BASE_URL,
+            )
+        else:
+            client = TradingClient(
+                api_key=ALPACA_KEY_ID,
+                secret_key=ALPACA_SECRET_KEY,
+                paper=ALPACA_PAPER,
+            )
+    except Exception as e:
+        print(f"Alpaca: failed to initialize trading client -> {e}")
+        return
+
+    orders: list[tuple[str, str, str]] = []
+
+    if worst is not None:
+        orders.append(("sell", worst.ticker, "short_signal"))
+    if best is not None:
+        orders.append(("buy", best.ticker, "long_signal"))
+
+    # Avoid placing opposing orders on the same symbol when only one ticker is present.
+    deduped_orders = []
+    seen_symbols = set()
+    for side, symbol, reason in orders:
+        if symbol in seen_symbols:
+            print(f"Alpaca: skipped duplicate/opposing order for {symbol}.")
+            continue
+        seen_symbols.add(symbol)
+        deduped_orders.append((side, symbol, reason))
+
+    for side, symbol, reason in deduped_orders:
+        client_order_id = f"midas-{trade_day}-{reason}-{symbol}".lower()
+        try:
+            # Positive qty is long, negative qty is short in Alpaca position model.
+            pos_qty = 0.0
+            try:
+                pos = client.get_open_position(symbol)
+                pos_qty = float(getattr(pos, "qty", 0.0))
+            except Exception:
+                pos_qty = 0.0
+
+            action = "buy"
+            if side == "sell":
+                action = "sell_long" if pos_qty > 0 else "short_sell"
+            elif side == "buy" and pos_qty < 0:
+                action = "buy_to_cover_or_reduce_short"
+
+            order = client.submit_order(
+                order_data=MarketOrderRequest(
+                    symbol=symbol,
+                    side=OrderSide.BUY if side == "buy" else OrderSide.SELL,
+                    time_in_force=TimeInForce.DAY,
+                    qty=ORDER_QTY_SHARES,
+                    client_order_id=client_order_id[:48],
+                )
+            )
+            oid = getattr(order, "id", "unknown")
+            est = getattr(order, "status", "accepted")
+            print(
+                f"Alpaca: submitted {side.upper()} {symbol} qty={ORDER_QTY_SHARES} "
+                f"(intent={action}, position_qty_before={pos_qty}, order_id={oid}, status={est})."
+            )
+        except Exception as e:
+            print(f"Alpaca: failed {side.upper()} {symbol} -> {e}")
 
 
 # ----------------------------
@@ -317,6 +407,11 @@ elif best:
     print(f"Daily pick (today-only): BUY {best.ticker} (mean={best.score:.4f}, n={best.count})")
 else:
     print("No tradable tickers found for daily picks today.")
+
+# ----------------------------
+# Execute picks in Alpaca (10 shares per order by default)
+# ----------------------------
+submit_alpaca_signal_orders(best, worst, today_str)
 
 # ----------------------------
 # Update persistent BST (month-long history)
