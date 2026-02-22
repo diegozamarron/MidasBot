@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import time
 from collections import defaultdict
 
@@ -202,6 +203,7 @@ def bst_rightmost(root: Node | None) -> Node | None:
 # Persistent tree helpers
 # ----------------------------
 TREE_PATH = "sentiment_tree.pkl"
+DASHBOARD_JSON_PATH = os.getenv("DASHBOARD_JSON_PATH", "dashboard/latest.json")
 
 
 def load_tree(path: str) -> Node | None:
@@ -221,6 +223,98 @@ def save_tree(path: str, root: Node | None) -> None:
             pickle.dump(root, f)
     except Exception as e:
         print(f"Warning: could not save tree to {path}: {e}")
+
+
+def node_to_dict(node: Node | None) -> dict | None:
+    if node is None:
+        return None
+    return {
+        "ticker": node.ticker,
+        "score": float(node.score),
+        "count": int(node.count),
+        "day": node.day,
+        "left": node_to_dict(node.left),
+        "right": node_to_dict(node.right),
+    }
+
+
+def save_latest_dashboard_snapshot(
+    path: str,
+    today: str,
+    best: Node | None,
+    worst: Node | None,
+    persistent_root: Node | None,
+    aggregated_rows: list[tuple[str, float, int]],
+    processed_signals: int,
+    inserted_nodes: int,
+) -> None:
+    payload = {
+        "as_of": f"{today}T00:00:00Z",
+        "latest_picks": {
+            # Keep both styles so downstream consumers are flexible.
+            "buy": (
+                {
+                    "ticker": best.ticker,
+                    "mean": float(best.score),
+                    "mentions": int(best.count),
+                }
+                if best
+                else None
+            ),
+            "sell": (
+                {
+                    "ticker": worst.ticker,
+                    "mean": float(worst.score),
+                    "mentions": int(worst.count),
+                }
+                if worst
+                else None
+            ),
+            "best": (
+                {
+                    "ticker": best.ticker,
+                    "mean": float(best.score),
+                    "mentions": int(best.count),
+                }
+                if best
+                else None
+            ),
+            "worst": (
+                {
+                    "ticker": worst.ticker,
+                    "mean": float(worst.score),
+                    "mentions": int(worst.count),
+                }
+                if worst
+                else None
+            ),
+        },
+        "persistent_tree": {
+            "root": node_to_dict(persistent_root),
+        },
+        "sentiment_rows": [
+            {
+                "ticker": tkr,
+                "mean": float(mean_score),
+                "mentions": int(cnt),
+            }
+            for (tkr, mean_score, cnt) in aggregated_rows
+        ],
+        "meta": {
+            "processed_signals": int(processed_signals),
+            "inserted_nodes": int(inserted_nodes),
+            "date": today,
+        },
+    }
+
+    try:
+        folder = os.path.dirname(path)
+        if folder:
+            os.makedirs(folder, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+    except Exception as e:
+        print(f"Warning: could not save dashboard snapshot to {path}: {e}")
 
 
 def submit_alpaca_signal_orders(best: Node | None, worst: Node | None, trade_day: str) -> None:
@@ -486,3 +580,15 @@ for tkr, mean_score, cnt in aggregated:
 
 save_tree(TREE_PATH, root_persist)
 print(f"Updated persistent tree: inserted {inserted} nodes for {today_str}. Saved to {TREE_PATH}.")
+
+save_latest_dashboard_snapshot(
+    DASHBOARD_JSON_PATH,
+    today=today_str,
+    best=best,
+    worst=worst,
+    persistent_root=root_persist,
+    aggregated_rows=aggregated,
+    processed_signals=processed,
+    inserted_nodes=inserted,
+)
+print(f"Updated dashboard snapshot: saved latest picks + persistent tree to {DASHBOARD_JSON_PATH}.")
