@@ -18,6 +18,7 @@ jobs:
       APCA_API_BASE_URL: https://paper-api.alpaca.markets
       APCA_PAPER: "true"
       ORDER_QTY_SHARES: "10"
+      DASHBOARD_JSON_PATH: latest.json
 
     steps:
       - name: Checkout
