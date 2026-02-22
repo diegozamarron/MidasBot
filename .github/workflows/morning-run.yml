@@ -41,7 +41,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add dashboard/latest.json sentiment_tree.pkl
+          git add latest.json sentiment_tree.pkl
           git diff --cached --quiet
           if ($LASTEXITCODE -ne 0) {
             git commit -m "Update Midas snapshot [skip ci]"
