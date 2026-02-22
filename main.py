@@ -321,6 +321,7 @@ processed = 0
 trade_rows = []  # list of (ticker, score)
 max_id = None
 fetched_posts = 0
+cloudflare_blocked = False
 
 while fetched_posts < LIMIT and processed < TARGET_USABLE_POSTS:
     paged_url = base_url
@@ -366,9 +367,15 @@ while fetched_posts < LIMIT and processed < TARGET_USABLE_POSTS:
             time.sleep(max(0.0, PAGE_DELAY_SECONDS))
             break
         except ValueError:
-            head = (last_resp.text or "")[:300]
+            raw_text = last_resp.text or ""
+            head = raw_text[:300]
             print(f"Non-JSON response. HTTP {status} | content-type: {ctype}")
             print(f"Response head: {head!r}")
+            lower = raw_text.lower()
+            if status == 403 and ("just a moment" in lower or "cloudflare" in lower):
+                cloudflare_blocked = True
+                print("Blocked by Cloudflare challenge page; cannot scrape Truth Social from this runner.")
+                break
             wait = min(60, 2 ** attempt)
             time.sleep(wait)
             continue
@@ -414,6 +421,12 @@ while fetched_posts < LIMIT and processed < TARGET_USABLE_POSTS:
     max_id = batch[-1].get("id")
     if not max_id:
         break
+
+if cloudflare_blocked and processed == 0:
+    raise SystemExit(
+        "Truth Social blocked this environment with a Cloudflare challenge (HTTP 403). "
+        "Use a self-hosted runner or run locally."
+    )
 
 print(f"Collected {processed} tradable signals for today.")
 
