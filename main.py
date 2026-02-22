@@ -203,7 +203,8 @@ def bst_rightmost(root: Node | None) -> Node | None:
 # Persistent tree helpers
 # ----------------------------
 TREE_PATH = "sentiment_tree.pkl"
-DASHBOARD_JSON_PATH = os.getenv("DASHBOARD_JSON_PATH", "latest.json")
+# Force root output path (repo root / current working directory).
+DASHBOARD_JSON_PATH = "latest.json"
 
 
 def load_tree(path: str) -> Node | None:
