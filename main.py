@@ -267,8 +267,13 @@ def submit_alpaca_signal_orders(best: Node | None, worst: Node | None, trade_day
         seen_symbols.add(symbol)
         deduped_orders.append((side, symbol, reason))
 
-    for side, symbol, reason in deduped_orders:
-        client_order_id = f"midas-{trade_day}-{reason}-{symbol}".lower()
+    run_id = int(time.time() * 1000) % 100000000
+    day_compact = trade_day.replace("-", "")
+
+    for i, (side, symbol, reason) in enumerate(deduped_orders, start=1):
+        side_tag = "b" if side == "buy" else "s"
+        # Alpaca requires global uniqueness; include run_id + order index for reruns.
+        client_order_id = f"mid-{day_compact}-{side_tag}-{symbol.lower()}-{run_id}-{i}"
         try:
             # Positive qty is long, negative qty is short in Alpaca position model.
             pos_qty = 0.0
@@ -290,7 +295,7 @@ def submit_alpaca_signal_orders(best: Node | None, worst: Node | None, trade_day
                     side=OrderSide.BUY if side == "buy" else OrderSide.SELL,
                     time_in_force=TimeInForce.DAY,
                     qty=ORDER_QTY_SHARES,
-                    client_order_id=client_order_id[:48],
+                    client_order_id=client_order_id,
                 )
             )
             oid = getattr(order, "id", "unknown")
