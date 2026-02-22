@@ -45,7 +45,14 @@
             "count": 1,
             "day": "2026-02-21",
             "left": null,
-            "right": null
+            "right": {
+              "ticker": "SPY",
+              "score": -0.8127,
+              "count": 1,
+              "day": "2026-02-21",
+              "left": null,
+              "right": null
+            }
           }
         },
         "right": {
@@ -54,7 +61,14 @@
           "count": 1,
           "day": "2026-02-21",
           "left": null,
-          "right": null
+          "right": {
+            "ticker": "PLTR",
+            "score": -0.4404,
+            "count": 1,
+            "day": "2026-02-21",
+            "left": null,
+            "right": null
+          }
         }
       },
       "right": {
@@ -92,7 +106,14 @@
                   "count": 2,
                   "day": "2026-02-21",
                   "left": null,
-                  "right": null
+                  "right": {
+                    "ticker": "XYL",
+                    "score": 0.2473,
+                    "count": 2,
+                    "day": "2026-02-21",
+                    "left": null,
+                    "right": null
+                  }
                 }
               }
             }
@@ -148,7 +169,14 @@
                           "count": 3,
                           "day": "2026-02-21",
                           "left": null,
-                          "right": null
+                          "right": {
+                            "ticker": "LMT",
+                            "score": 0.5342333333333333,
+                            "count": 3,
+                            "day": "2026-02-21",
+                            "left": null,
+                            "right": null
+                          }
                         },
                         "right": {
                           "ticker": "BA",
@@ -156,7 +184,14 @@
                           "count": 1,
                           "day": "2026-02-21",
                           "left": null,
-                          "right": null
+                          "right": {
+                            "ticker": "BA",
+                            "score": 0.9551,
+                            "count": 1,
+                            "day": "2026-02-21",
+                            "left": null,
+                            "right": null
+                          }
                         }
                       }
                     },
@@ -166,7 +201,14 @@
                       "count": 1,
                       "day": "2026-02-21",
                       "left": null,
-                      "right": null
+                      "right": {
+                        "ticker": "FOX",
+                        "score": 0.9742,
+                        "count": 1,
+                        "day": "2026-02-21",
+                        "left": null,
+                        "right": null
+                      }
                     }
                   },
                   "right": {
@@ -175,7 +217,14 @@
                     "count": 38,
                     "day": "2026-02-21",
                     "left": null,
-                    "right": null
+                    "right": {
+                      "ticker": "XOM",
+                      "score": 0.9852447368421051,
+                      "count": 38,
+                      "day": "2026-02-21",
+                      "left": null,
+                      "right": null
+                    }
                   }
                 }
               }
@@ -238,7 +287,14 @@
                       "count": 3,
                       "day": "2026-02-21",
                       "left": null,
-                      "right": null
+                      "right": {
+                        "ticker": "CVX",
+                        "score": 0.9917666666666666,
+                        "count": 3,
+                        "day": "2026-02-21",
+                        "left": null,
+                        "right": null
+                      }
                     }
                   }
                 }
