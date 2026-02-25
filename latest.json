@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-02-24T00:00:00Z",
+  "as_of": "2026-02-25T00:00:00Z",
   "latest_picks": {
     "buy": {
       "ticker": "CVX",
@@ -45,7 +45,14 @@
             "count": 1,
             "day": "2026-02-24",
             "left": null,
-            "right": null
+            "right": {
+              "ticker": "SPY",
+              "score": -0.8127,
+              "count": 1,
+              "day": "2026-02-25",
+              "left": null,
+              "right": null
+            }
           }
         },
         "right": {
@@ -69,7 +76,14 @@
                 "count": 1,
                 "day": "2026-02-24",
                 "left": null,
-                "right": null
+                "right": {
+                  "ticker": "PLTR",
+                  "score": -0.4404,
+                  "count": 1,
+                  "day": "2026-02-25",
+                  "left": null,
+                  "right": null
+                }
               },
               "right": {
                 "ticker": "XYL",
@@ -77,7 +91,14 @@
                 "count": 2,
                 "day": "2026-02-24",
                 "left": null,
-                "right": null
+                "right": {
+                  "ticker": "XYL",
+                  "score": 0.2473,
+                  "count": 2,
+                  "day": "2026-02-25",
+                  "left": null,
+                  "right": null
+                }
               }
             },
             "right": {
@@ -91,7 +112,14 @@
                 "count": 5,
                 "day": "2026-02-24",
                 "left": null,
-                "right": null
+                "right": {
+                  "ticker": "LMT",
+                  "score": 0.7115199999999999,
+                  "count": 5,
+                  "day": "2026-02-25",
+                  "left": null,
+                  "right": null
+                }
               },
               "right": {
                 "ticker": "BA",
@@ -99,7 +127,14 @@
                 "count": 1,
                 "day": "2026-02-24",
                 "left": null,
-                "right": null
+                "right": {
+                  "ticker": "BA",
+                  "score": 0.9551,
+                  "count": 1,
+                  "day": "2026-02-25",
+                  "left": null,
+                  "right": null
+                }
               }
             }
           },
@@ -114,9 +149,23 @@
               "count": 1,
               "day": "2026-02-24",
               "left": null,
-              "right": null
+              "right": {
+                "ticker": "FOX",
+                "score": 0.9742,
+                "count": 1,
+                "day": "2026-02-25",
+                "left": null,
+                "right": null
+              }
             },
-            "right": null
+            "right": {
+              "ticker": "XOM",
+              "score": 0.9850277777777777,
+              "count": 36,
+              "day": "2026-02-25",
+              "left": null,
+              "right": null
+            }
           }
         }
       },
@@ -132,7 +181,14 @@
           "count": 3,
           "day": "2026-02-24",
           "left": null,
-          "right": null
+          "right": {
+            "ticker": "CVX",
+            "score": 0.9917666666666666,
+            "count": 3,
+            "day": "2026-02-25",
+            "left": null,
+            "right": null
+          }
         }
       }
     }
@@ -182,6 +238,6 @@
   "meta": {
     "processed_signals": 50,
     "inserted_nodes": 8,
-    "date": "2026-02-24"
+    "date": "2026-02-25"
   }
 }
