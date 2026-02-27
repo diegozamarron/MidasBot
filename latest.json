@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-02-25T00:00:00Z",
+  "as_of": "2026-02-26T00:00:00Z",
   "latest_picks": {
     "buy": {
       "ticker": "CVX",
@@ -57,7 +57,14 @@
                 "count": 1,
                 "day": "2026-02-25",
                 "left": null,
-                "right": null
+                "right": {
+                  "ticker": "SPY",
+                  "score": -0.8127,
+                  "count": 1,
+                  "day": "2026-02-26",
+                  "left": null,
+                  "right": null
+                }
               }
             }
           }
@@ -100,7 +107,14 @@
                       "count": 1,
                       "day": "2026-02-25",
                       "left": null,
-                      "right": null
+                      "right": {
+                        "ticker": "PLTR",
+                        "score": -0.4404,
+                        "count": 1,
+                        "day": "2026-02-26",
+                        "left": null,
+                        "right": null
+                      }
                     },
                     "right": null
                   }
@@ -124,7 +138,21 @@
                     "count": 2,
                     "day": "2026-02-25",
                     "left": null,
-                    "right": null
+                    "right": {
+                      "ticker": "FOX",
+                      "score": 0.39936666666666665,
+                      "count": 3,
+                      "day": "2026-02-26",
+                      "left": {
+                        "ticker": "XYL",
+                        "score": 0.2473,
+                        "count": 2,
+                        "day": "2026-02-26",
+                        "left": null,
+                        "right": null
+                      },
+                      "right": null
+                    }
                   }
                 }
               }
@@ -152,7 +180,14 @@
                     "count": 5,
                     "day": "2026-02-25",
                     "left": null,
-                    "right": null
+                    "right": {
+                      "ticker": "LMT",
+                      "score": 0.7115199999999999,
+                      "count": 5,
+                      "day": "2026-02-26",
+                      "left": null,
+                      "right": null
+                    }
                   }
                 }
               },
@@ -174,7 +209,14 @@
                     "count": 1,
                     "day": "2026-02-25",
                     "left": null,
-                    "right": null
+                    "right": {
+                      "ticker": "BA",
+                      "score": 0.9551,
+                      "count": 1,
+                      "day": "2026-02-26",
+                      "left": null,
+                      "right": null
+                    }
                   }
                 }
               }
@@ -222,7 +264,14 @@
           "count": 35,
           "day": "2026-02-25",
           "left": null,
-          "right": null
+          "right": {
+            "ticker": "XOM",
+            "score": 0.9868088235294119,
+            "count": 34,
+            "day": "2026-02-26",
+            "left": null,
+            "right": null
+          }
         },
         "right": {
           "ticker": "CVX",
@@ -242,7 +291,14 @@
               "count": 3,
               "day": "2026-02-25",
               "left": null,
-              "right": null
+              "right": {
+                "ticker": "CVX",
+                "score": 0.9917666666666666,
+                "count": 3,
+                "day": "2026-02-26",
+                "left": null,
+                "right": null
+              }
             }
           }
         }
@@ -251,14 +307,14 @@
   },
   "sentiment_rows": [
     {
-      "ticker": "XOM",
-      "mean": 0.9860828571428571,
-      "mentions": 35
+      "ticker": "FOX",
+      "mean": 0.39936666666666665,
+      "mentions": 3
     },
     {
-      "ticker": "FOX",
-      "mean": 0.13329999999999997,
-      "mentions": 2
+      "ticker": "XOM",
+      "mean": 0.9868088235294119,
+      "mentions": 34
     },
     {
       "ticker": "LMT",
@@ -294,6 +350,6 @@
   "meta": {
     "processed_signals": 50,
     "inserted_nodes": 8,
-    "date": "2026-02-25"
+    "date": "2026-02-26"
   }
 }
